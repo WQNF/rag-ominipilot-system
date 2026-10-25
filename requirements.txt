@@ -1,0 +1,63 @@
+# ================================================
+# OmniPilot 企业智能运营助手 - Python 后端依赖
+# 安装命令: pip install -r requirements.txt
+# Python 版本要求: >= 3.10
+# 导出日期: 2026-08-17
+# ================================================
+
+# LangChain 生态
+langchain==1.2.14
+langchain-core==1.3.0
+langchain-openai==1.1.12
+langgraph==1.1.9
+langgraph-checkpoint==4.0.1
+langgraph-prebuilt==1.0.10
+
+# 向量数据库
+pymilvus==2.6.12
+
+# 文档解析
+python-docx==1.2.0
+pdfplumber==0.11.9
+pandas==1.5.3
+openpyxl==3.1.5
+xlrd==2.0.2
+
+# OCR 支持
+pytesseract==0.3.13
+Pillow==12.2.0
+
+# 关键词检索
+rank-bm25==0.2.2
+
+# Web 框架
+fastapi==0.136.1
+uvicorn==0.44.0
+
+# 数据库（使用 binary 版，避免 Windows / slim 镜像缺少 pg_config 导致编译失败）
+psycopg2-binary==2.9.12
+bcrypt==3.2.2
+
+# 认证
+PyJWT==2.12.1
+
+# 环境变量
+python-dotenv==1.2.2
+
+# HTTP 请求
+requests==2.33.1
+
+# LangSmith 追踪（可选）
+langsmith==0.7.24
+
+# 工具库（间接依赖但需显式声明）
+numpy==1.26.4
+python-multipart==0.0.27
+sse-starlette==3.4.1
+
+# 监控与指标
+prometheus-client==0.23.1
+prometheus-fastapi-instrumentator==7.1.0
+
+# JWT 认证（补充 python-jose，PyJWT 为其依赖）
+python-jose[cryptography]==3.4.0

@@ -1,0 +1,23 @@
+# 后端镜像构建上下文：排除大文件、密钥与前端依赖
+.git
+.gitignore
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+*.pkl
+.env
+*.log
+
+# 本地用户数据 / 设置（包含 API Key，禁止打进镜像）
+api/user_settings.json
+data/conversations.json
+
+# 后端 Dockerfile 不需要的目录
+frontend-react
+docker
+nginx
+OCR
+valuation
+readme.md

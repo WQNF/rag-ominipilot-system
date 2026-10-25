@@ -1,0 +1,44 @@
+# 密钥 & 环境变量 — 绝对不能上传
+.env
+
+# Python 字节码
+__pycache__/
+*.pyc
+*.pyo
+
+# Python 虚拟环境
+.venv/
+venv/
+env/
+
+# 前端依赖与构建产物
+frontend-react/node_modules/
+frontend-react/dist/
+
+# 日志与临时文件
+*.log
+*.tmp
+*.bak
+
+# BM25 索引 (可重新生成，文件较大)
+bm25_index.pkl
+
+# 评测报告 (运行结果，每次重新生成)
+valuation/reports/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker/volumes/
+
+# 用户会话/设置
+api/user_settings.json
+data/conversations.json
