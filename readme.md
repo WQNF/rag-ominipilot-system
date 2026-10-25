@@ -1,4 +1,4 @@
-# OmniPilot 企业智能运营助手
+# OmniPilot 面向银行业监管制度与统计报表的可信 RAG 问答系统
 
 面向银行业监管制度与统计报表的**可信 RAG 问答系统**。基于 LangGraph 多智能体协作框架，集成 Milvus 向量检索、BM25 关键词检索、RRF 融合与 Reranker 重排序，支持 Word / Excel / PDF 多源异构文档的精准检索、跨文件多跳推理与可验证问答。
 
