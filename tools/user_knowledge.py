@@ -208,7 +208,9 @@ class UserKnowledgeRetriever:
                 "sheet_name": hit.entity.get("sheet_name", ""),
                 "knowledge_scope": "user",
             }
-            docs.append((Document(page_content=hit.entity.get("text", ""), metadata=metadata), hit.score))
+            from tools.context_format import ensure_header
+            docs.append((Document(page_content=ensure_header(hit.entity.get("text", ""), metadata),
+                                  metadata=metadata), hit.score))
         return docs
 
 
@@ -238,15 +240,8 @@ def _parse_file(filepath: Path, document_id: str, username: str) -> Tuple[List[s
         meta["file_name"] = filepath.name
         meta["file_type"] = file_type
 
-        prefix_parts = [f"[Source: {filepath.name}]"]
-        if meta.get("page"):
-            prefix_parts.append(f"Page: {meta['page']}")
-        if meta.get("section"):
-            prefix_parts.append(f"Clause: {meta['section']}")
-        if meta.get("sheet_name"):
-            prefix_parts.append(f"Sheet: {meta['sheet_name']}")
-        prefix = " | ".join(prefix_parts) + "\n"
-        texts.append(prefix + str(chunk.get("content") or ""))
+        # 只存干净正文；来源信息在 metadata 里，检索时由 context_format 还原
+        texts.append(str(chunk.get("content") or ""))
         metadatas.append(meta)
     return texts, metadatas
 

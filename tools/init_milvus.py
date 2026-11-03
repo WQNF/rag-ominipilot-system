@@ -111,18 +111,9 @@ def build_knowledge_base(doc_directory: str = None, file_list: list = None, prog
                 for key in ("authority", "publish_date", "doc_number", "doc_id"):
                     if not meta.get(key) and doc_meta.get(key):
                         meta[key] = doc_meta[key]
-            prefix_parts = [f"[Source: {meta.get('file_name', 'unknown')}]"]
-            if meta.get("chapter"):
-                prefix_parts.append(f"Chapter: {meta['chapter']}")
-            if meta.get("section"):
-                prefix_parts.append(f"Clause: {meta['section']}")
-            if meta.get("sheet_name"):
-                prefix_parts.append(f"Sheet: {meta['sheet_name']}")
-            if meta.get("indicator"):
-                prefix_parts.append(f"Indicator: {meta['indicator']}")
-            prefix = " | ".join(prefix_parts) + "\n"
-            full_content = prefix + chunk["content"]
-            all_texts.append(full_content)
+            # 只存干净正文：来源/章节编号等归属信息全部留在 metadata，
+            # 展示层由 tools.context_format.ensure_header() 还原（见 README「标题泄漏」一节）。
+            all_texts.append(chunk["content"])
             all_metadatas.append(meta)
 
     if not all_texts:
@@ -230,6 +221,8 @@ def build_pdf_knowledge_base(pdf_directory: str = None, skip_confirm: bool = Fal
                 for key in ("authority", "publish_date", "doc_number", "doc_id"):
                     if not meta.get(key) and doc_meta.get(key):
                         meta[key] = doc_meta[key]
+            # PDF 例外：页码（Page）没有对应的 Milvus 字段可存，只能留在头部；
+            # 其余字段（file_name/chapter/section）metadata 里都有。
             prefix_parts = [f"[Source: {meta.get('file_name', 'unknown')}]"]
             if meta.get("chapter"):
                 prefix_parts.append(f"Chapter: {meta['chapter']}")
@@ -335,16 +328,8 @@ def build_excel_knowledge_base(excel_directory: str = None, skip_confirm: bool =
                 for key in ("authority", "publish_date", "doc_number", "doc_id"):
                     if not meta.get(key) and doc_meta.get(key):
                         meta[key] = doc_meta[key]
-            prefix_parts = [f"[Source: {meta.get('file_name', 'unknown')}]"]
-            if meta.get("sheet_name"):
-                prefix_parts.append(f"Sheet: {meta['sheet_name']}")
-            if meta.get("indicator"):
-                prefix_parts.append(f"Indicator: {meta['indicator']}")
-            if meta.get("time_dimension"):
-                prefix_parts.append(f"Period: {meta['time_dimension']}")
-            prefix = " | ".join(prefix_parts) + "\n"
-            full_content = prefix + chunk["content"]
-            all_texts.append(full_content)
+            # Excel 片段同样只存干净正文；Sheet / Indicator / Period 都在 metadata 里
+            all_texts.append(chunk["content"])
             all_metadatas.append(meta)
 
     if not all_texts:

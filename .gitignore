@@ -42,3 +42,10 @@ docker/volumes/
 # 用户会话/设置
 api/user_settings.json
 data/conversations.json
+# BM25 索引与备份（体积大、可重建）
+bm25_index*.pkl
+bm25_index.pkl.*
+bm25_domain_dict.txt.tmp
+
+# 后台任务日志
+logs/
