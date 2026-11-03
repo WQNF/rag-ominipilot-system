@@ -61,3 +61,5 @@ prometheus-fastapi-instrumentator==7.1.0
 
 # JWT 认证（补充 python-jose，PyJWT 为其依赖）
 python-jose[cryptography]==3.4.0
+# BM25 中文分词（领域词典见 tools/bm25_tokenizer.py）
+jieba>=0.42.1

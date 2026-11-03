@@ -3,6 +3,7 @@
 """
 import os
 import json
+import time
 from typing import List, Optional, Tuple, Dict, Any
 from pymilvus import connections, Collection, CollectionSchema, FieldSchema, DataType, utility
 from langchain_core.documents import Document
@@ -107,18 +108,29 @@ class MilvusRetriever(BaseRetriever):
         except Exception as e:
             print(f"[Milvus] 删除旧数据失败: {e}")
 
-    def insert(self, texts: List[str], embeddings: List[List[float]], metadatas: List[Dict[str, Any]]):
+    def insert(self, texts: List[str], embeddings: List[List[float]],
+               metadatas: List[Dict[str, Any]], batch_size: int = 500):
+        """批量插入文本、向量和元数据。
+
+        旧实现是逐条 `collection.insert([entity])`：10.7 万条约 40 分钟，
+        且 10.7 万条向量全程驻留内存（峰值 4 GB+）。
+        改成每 batch_size 条一次 insert 后，写入降到分钟级、内存只需要一个批次。
         """
-        批量插入文本、向量和元数据（逐行插入，处理 None 值）
-        """
+        total = len(texts)
+        if total == 0:
+            print("✅ 成功插入 0 条记录")
+            return
+
+        def safe_str(value):
+            if value is None:
+                return ""
+            return str(value)
+
+        t0 = time.time()
+        batch: List[Dict[str, Any]] = []
+        inserted = 0
+
         for i, (text, emb, meta) in enumerate(zip(texts, embeddings, metadatas)):
-            # 辅助函数：将 None 转为空字符串，其他类型转为字符串
-            def safe_str(value):
-                if value is None:
-                    return ""
-                return str(value)
-            
-            # 处理 tags：可能是列表，需转为 JSON 字符串
             tags_value = meta.get("tags")
             if tags_value is None:
                 tags_str = "[]"
@@ -126,24 +138,12 @@ class MilvusRetriever(BaseRetriever):
                 tags_str = json.dumps(tags_value)
             else:
                 tags_str = safe_str(tags_value)
-            
+
             file_name_val = safe_str(meta.get("file_name"))
             chapter_val = safe_str(meta.get("chapter"))
             indicator_val = safe_str(meta.get("indicator"))
             authority_val = safe_str(meta.get("authority"))
-            
-            # 诊断：检查字段长度是否超限
-            _max_1024_fields = {
-                "file_name": (file_name_val, 1024),
-                "chapter": (chapter_val, 1024),
-                "authority": (authority_val, 1024),
-                "indicator": (indicator_val, 1024),
-            }
-            for _fname, (_fval, _flimit) in _max_1024_fields.items():
-                if len(_fval) > _flimit:
-                    print(f"[WARN] 第 {i} 个 chunk 字段 '{_fname}' 长度 {len(_fval)} > {_flimit}")
-                    print(f"        file_name='{file_name_val}', {_fname}='{_fval[:200]}...'")
-            
+
             entity = {
                 "text": safe_str(text),
                 "embedding": emb,
@@ -160,11 +160,25 @@ class MilvusRetriever(BaseRetriever):
                 "sheet_name": safe_str(meta.get("sheet_name")),
                 "time_dimension": safe_str(meta.get("time_dimension")),
                 "tags": tags_str,
-                "normative_strength": safe_str(meta.get("normative_strength"))
+                "normative_strength": safe_str(meta.get("normative_strength")),
             }
-            self.collection.insert([entity])
+            batch.append(entity)
+
+            if len(batch) >= batch_size:
+                self.collection.insert(batch)
+                inserted += len(batch)
+                batch = []
+                if inserted % 10000 == 0 or inserted == batch_size:
+                    print(f"[Milvus] 已写入 {inserted}/{total} 条，"
+                          f"{time.time() - t0:.0f}s", flush=True)
+
+        if batch:
+            self.collection.insert(batch)
+            inserted += len(batch)
+
         self.collection.flush()
-        print(f"✅ 成功插入 {len(texts)} 条记录")
+        print(f"✅ 成功插入 {inserted} 条记录（批量 {batch_size} 条/次，"
+              f"耗时 {time.time() - t0:.0f}s）")
     
     def search(
         self,
@@ -211,7 +225,12 @@ class MilvusRetriever(BaseRetriever):
                     "normative_strength": hit.entity.get("normative_strength", ""),
                     "doc_id": hit.entity.get("doc_id", "")
                 }
-                doc = Document(page_content=hit.entity.get("text", ""), metadata=metadata)
+                # 库里存的是干净正文，展示层在这里补回来源头部（旧数据本身带头部则原样返回）
+                from tools.context_format import ensure_header
+                doc = Document(
+                    page_content=ensure_header(hit.entity.get("text", ""), metadata),
+                    metadata=metadata,
+                )
                 docs_with_scores.append((doc, score))
         
         return docs_with_scores
